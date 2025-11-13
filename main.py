@@ -10,11 +10,14 @@ from telethon.tl.functions.channels import GetParticipantsRequest
 from telethon.tl.types import ChannelParticipantsSearch
 from telethon.errors import FloodWaitError
 
+ 
+import config
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 class TelegramSessionManager:
-    def __init__(self, sessions_folder="sessions", api_id=None, api_hash=None):
+    def __init__(self, sessions_folder=config.SESSIONS_FOLDER, api_id=config.BOT_API_ID, api_hash=config.BOT_API_HASH):
         self.sessions_folder = sessions_folder
         self.api_id = api_id
         self.api_hash = api_hash
@@ -72,12 +75,12 @@ class TelegramSessionManager:
 
 
 class TelegramIDFinder:
-    def __init__(self, api_id, api_hash, bot_token, csv_file='chats.csv', sessions_folder='sessions'):
+    def __init__(self, api_id=config.BOT_API_ID, api_hash=config.BOT_API_HASH, bot_token=config.BOT_TOKEN, 
+                 csv_file=config.CHATS_CSV_FILE, sessions_folder=config.SESSIONS_FOLDER):
         self.bot_client = TelegramClient('bot_session', api_id, api_hash)
         self.bot_token = bot_token
         self.active_searches = {}
         self.csv_file = csv_file
-        
         self.session_manager = TelegramSessionManager(sessions_folder, api_id, api_hash)
         
         if not os.path.exists(csv_file):
@@ -161,7 +164,7 @@ class TelegramIDFinder:
                         break
                         
                     offset += limit
-                    await asyncio.sleep(0.5)
+                    await asyncio.sleep(0.5)  
                     
                 except FloodWaitError as e:
                     logger.warning(f"Flood wait: {e.seconds} секунд")
@@ -177,11 +180,11 @@ class TelegramIDFinder:
         all_found_users = []
         total_scanned = 0
         failed_chats = []
-        
         tasks = []
         for chat_identifier in chat_identifiers:
             task = self.search_single_chat_with_session(chat_identifier, id_suffix)
             tasks.append(task)
+        
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
         for i, result in enumerate(results):
@@ -225,8 +228,8 @@ class TelegramIDFinder:
             "status": "active",
             "chats_in_database": len(chats),
             "sessions_for_parsing": sessions_count,
-            "developer": "@yoxiko ",
-            "note": "Бот не нарушает правила Telegram, все данные из открытых источников и публичных каналов.",
+            "developer": "@yoxiko",
+            "note": "Бот не нарушает правила Telegram, все данные из публичных чатов и открытх источников.",
             "timestamp": datetime.now().isoformat()
         }
         
@@ -238,11 +241,11 @@ class TelegramIDFinder:
             if len(parts) < 3:
                 response_data = {
                     "error": "Invalid command format",
-                    "usage": "/search <chat> <ID>",
+                    "usage": "/search <чаты> <окончание_ID>",
                     "examples": [
                         "/search @chat1,@chat2 123",
                         "/search csv 123", 
-                        "/search https://t.me/channel <id>"
+                        "/search https://t.me/channel 456"
                     ]
                 }
                 await event.reply(self.create_json_response(response_data))
@@ -303,6 +306,7 @@ class TelegramIDFinder:
             }
             
             await event.reply(self.create_json_response(start_status))
+
             found_users, total_scanned, failed_chats = await self.search_multiple_chats_parallel(
                 chat_identifiers, id_suffix
             )
@@ -455,18 +459,12 @@ class TelegramIDFinder:
         await self.bot_client.run_until_disconnected()
 
     async def close(self):
-
         await self.session_manager.close_all()
         await self.bot_client.disconnect()
 
 
-API_ID = 11111  # Ваш API ID
-API_HASH = 'хэш '  # Ваш API Hash   
-BOT_TOKEN = 'токен '  
-
-
 async def main():
-    finder_bot = TelegramIDFinder(API_ID, API_HASH, BOT_TOKEN)
+    finder_bot = TelegramIDFinder()
     try:
         await finder_bot.run()
     finally:
