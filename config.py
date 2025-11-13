@@ -1,6 +1,5 @@
-# Конфигурация бота
-BOT_API_ID = 111  # Ваш API ID для бота
-BOT_API_HASH = ' '  # Ваш API Hash для бота
+BOT_API_ID = 111  #   API ID для бота
+BOT_API_HASH = ' '  #   API Hash для бота -- брать их https://my.telegram.org/apps
 BOT_TOKEN = 'токен' 
 
 SESSIONS_FOLDER = 'sessions'
