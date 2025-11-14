@@ -152,7 +152,7 @@ class TelegramIDFinder:
                         if user_id_str.endswith(id_suffix):
                             user_info = {
                                 'id': user.id,
-                                'username': user.username,
+                                'username': f"@{user.username}",
                                 'first_name': user.first_name,
                                 'last_name': user.last_name,
                                 'chat_title': chat_title,
